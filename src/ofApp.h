@@ -23,9 +23,28 @@ class ofApp : public ofBaseApp{
 
 		int mouseX;
 		int mouseY;
+
+		int lives;
+		int score;
+
 		ofColor fillColor;
 		ofRectangle player;
 		ofRectangle enemy;
 		ofRectangle enemy2;	
-		
+		ofRectangle enemy3;
+		int xpos;
+		bool moveRight;
+		bool moveLeft;
+
+		int playerXpos;
+		int playerYpos;
+		int screenWidth;
+		int screenHeight;
+};
+
+class player{
+	public:
+
+	void drawPlayer();
+
 };
