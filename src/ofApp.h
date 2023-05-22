@@ -2,6 +2,38 @@
 
 #include "ofMain.h"
 
+class avatar{
+	private:
+		
+		int xPos;
+		int yPos;
+	
+	public: 
+		ofRectangle avatarShape;
+		avatar(int xPos, int yPos);
+		void drawAvatar();
+		void moveAvatar(int direction);
+		void resetAvatar();
+		ofRectangle getAvatarShape();
+};
+
+class enemy{
+	private:
+		
+		int xPos;
+		int yPos;
+		int speed;
+		bool moveRight;
+		bool moveLeft;
+	
+	public:
+		enemy(int xPos, int yPos, int speed, bool moveRight, bool moveLeft);
+		void drawEnemy();
+		void moveEnemy();
+		ofRectangle enemyShape;
+		ofRectangle getEnemyShape();
+};
+
 class ofApp : public ofBaseApp{
 
 	public:
@@ -10,16 +42,6 @@ class ofApp : public ofBaseApp{
 		void draw();
 
 		void keyPressed(int key);
-		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
-		void windowResized(int w, int h);
-		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);
 
 		int mouseX;
 		int mouseY;
@@ -27,24 +49,9 @@ class ofApp : public ofBaseApp{
 		int lives;
 		int score;
 
-		ofColor fillColor;
-		ofRectangle player;
-		ofRectangle enemy;
-		ofRectangle enemy2;	
-		ofRectangle enemy3;
-		int xpos;
-		bool moveRight;
-		bool moveLeft;
-
-		int playerXpos;
-		int playerYpos;
 		int screenWidth;
 		int screenHeight;
-};
-
-class player{
-	public:
-
-	void drawPlayer();
-
+		
+		avatar* player;
+		vector<enemy>* enemies;
 };

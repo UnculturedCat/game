@@ -2,27 +2,30 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofSetWindowTitle("ofApp");
+    ofSetWindowTitle("Dodger Dave");
     ofSetVerticalSync(true);
     mouseX = ofGetMouseX();
     mouseY = ofGetMouseY();
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
-    fillColor.set(255, 155, 0);
-    xpos = 0;
     lives = 3;
-    moveRight = true;
-    moveLeft = false;
-    playerXpos = screenWidth / 2;
-    playerYpos = screenHeight - 100;
+    player = new avatar(screenWidth / 2, screenHeight * 0.95);
+    enemies = new vector<enemy>{enemy(screenWidth * 0.25, screenHeight * 0.25, screenWidth * 0.02, false, true), enemy(screenWidth * 0.5, screenHeight * 0.5, screenWidth * 0.015, true, false), enemy(screenWidth * 0.50, screenHeight * 0.75, screenWidth * 0.01, false, true)};
 }
 
 //--------------------------------------------------------------
 void ofApp::update(){
-    mouseX = ofGetMouseX();
-    mouseY = ofGetMouseY();
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
+    if(lives <= 0){
+        return;
+    }
+    for(int i = 0; i < enemies->size(); i++){
+        if(player->avatarShape.intersects(enemies->at(i).enemyShape)){
+            lives--;
+            player->resetAvatar();
+        }
+    }
 }
 
 //--------------------------------------------------------------
@@ -30,9 +33,9 @@ void ofApp::draw(){
     
     ofBackground(255, 255, 255);
     
-    if(lives == 0){
+    if(lives <= 0){
         ofSetColor(0, 0, 0);
-        ofDrawBitmapString("Game Over\nHit SPACE to start again", screenWidth * 0.50, screenHeight * 0.50);
+        ofDrawBitmapString("Game Over\nHit SPACE to start again or Q to quit", screenWidth * 0.50, screenHeight * 0.50);
         return;
     }
     if(lives == 3){
@@ -48,49 +51,11 @@ void ofApp::draw(){
         ofDrawBitmapString("Lives: 1", 10, 20);
     }
 
-    player.set(playerXpos, playerYpos, 50, 50);
-    
-    enemy.set(screenWidth * 0.25, screenHeight * 0.25, 50, 50);
-    enemy2.set(screenWidth * 0.75, screenHeight * 0.75, 50, 50);
-    
-  
-    
-    ofSetColor(255, 0, 0);
-    if (moveRight == true) {
-       if(xpos <= screenWidth - 200){ 
-            xpos += 5;
-       }
-        else{
-            moveRight = false;
-            moveLeft = true;
-        }
-        enemy3.set(xpos, screenHeight * 0.50, 200, 100);
-        ofDrawRectangle(enemy3);
+    player->drawAvatar();
+    for(int i = 0; i < enemies->size(); i++){
+        enemies->at(i).moveEnemy();
+        enemies->at(i).drawEnemy();
     }
-    else if(moveLeft == true){
-        if(xpos >= 0)
-            xpos -= 10;
-        if(xpos <= 0){
-            moveRight = true;
-            moveLeft = false;
-        }
-        enemy3.set(xpos, screenHeight * 0.50, 200, 100);
-        ofDrawRectangle(enemy3);
-    }
-
-   
-    
-    // ofTriangle(mouseX, mouseY, mouseX + 50, mouseY + 50, mouseX - 50, mouseY + 50);
-   
-    ofDrawRectangle(enemy);
-    ofDrawRectangle(enemy2);
-    if(player.intersects(enemy) || player.intersects(enemy2) || player.intersects(enemy3)) {
-        lives--;
-        playerXpos = screenWidth / 2;
-        playerYpos = screenHeight - 100;
-    }
-    ofSetColor(fillColor);
-    ofDrawRectangle(player);
 }
 
 //--------------------------------------------------------------
@@ -98,85 +63,115 @@ void ofApp::keyPressed(int key){
 
     if(key == ' '){
         lives = 3;
+        player->resetAvatar();
     }
     else if(key == 'q'){
         ofExit();
     }
-    if(lives != 0){
-        if(key == 'w'){//move player up
-            if(playerYpos >= 0)
+    player->moveAvatar(key);
+}
+
+avatar::avatar(int xPos, int yPos){
+    this->xPos = xPos;
+    this->yPos = yPos;
+    this->avatarShape.set(xPos, yPos, 50, 50);
+}
+
+void avatar::drawAvatar(){
+    ofSetColor(0, 0, 0);
+    this->avatarShape.set(this->xPos, this->yPos, 50, 50);
+    ofDrawRectangle(this->avatarShape);
+}
+
+void avatar::moveAvatar(int direction){
+    int screenWidth = ofGetWidth();
+    int screenHeight = ofGetHeight();
+    switch(direction){
+        case 'w':
+            if(this->yPos >= 0)
             {
-                playerYpos -= 10;
+                this->yPos -= screenHeight * 0.01;
             }
-           
-        }
-        else if(key == 's'){//move player down
-            if(playerYpos <= screenHeight)
+            break;
+        case 's':
+            if(this->yPos <= screenHeight)
             {
-                playerYpos += 10;
+                this->yPos += screenHeight * 0.01;
             }
-        }
-        else if(key == 'a'){//move player left
-            if(playerXpos >= 0)
+            break;
+        case 'a':
+            if(this->xPos >= 0)
             {
-                playerXpos -= 10;    
+                this->xPos -= screenWidth * 0.01;    
             }
-        }
-        else if(key == 'd'){//move player right
-            if(playerXpos <= screenWidth)
+            break;
+        case 'd':
+            if(this->xPos <= screenWidth - 50)
             {
-                playerXpos += 10;
+                this->xPos += screenWidth * 0.01;
             }
-        }
+            break;
     }
 }
 
-//--------------------------------------------------------------
-void ofApp::keyReleased(int key){
-
+ofRectangle avatar::getAvatarShape(){
+    return this->avatarShape;
 }
 
-//--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-
+void avatar::resetAvatar(){
+    this->xPos = ofGetWidth() / 2;
+    this->yPos = ofGetHeight() * 0.95;
 }
 
-//--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-
+enemy::enemy(int xPos, int yPos, int speed, bool moveRight, bool moveLeft){
+    this->xPos = xPos;
+    this->yPos = yPos;
+    this->speed = speed;
+    this->moveRight = moveRight;
+    this->moveLeft = moveLeft;
+    this->enemyShape.set(xPos, yPos, 200, 100);
 }
 
-//--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-
+void enemy::drawEnemy(){
+    this->enemyShape.set(this->xPos, this->yPos, 200, 100);
+    ofSetColor(255, 155, 0);
+    ofDrawRectangle(this->enemyShape);
 }
 
-//--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-
+void enemy::moveEnemy(){
+    int screenWidth = ofGetWidth();
+    int screenHeight = ofGetHeight();
+    if (moveRight) {
+       if(this->xPos <= screenWidth - 200){ 
+        if(speed <= screenWidth * 0.01){
+            this->xPos += speed * 1.5;
+        }
+           else{
+               this->xPos += speed;
+           } 
+       }
+        else{
+            this->moveRight = false;
+            this->moveLeft = true;
+        }
+    }
+    else if(moveLeft){
+        if(this->xPos >= 0){
+            if(speed > screenWidth * 0.01){
+                this->xPos -= speed * 0.75;
+            }
+            else{
+                this->xPos -= speed;
+            }
+            } //slower than moveRight to make it more interesting
+        if(this->xPos <= 0){
+            this->moveRight = true;
+            this->moveLeft = false;
+        }
+    }
+    drawEnemy();
 }
 
-//--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
-}
-
-//--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-
+ofRectangle enemy::getEnemyShape(){
+    return this->enemyShape;
 }
