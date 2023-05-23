@@ -4,7 +4,6 @@
 
 class avatar{
 	private:
-		
 		int xPos;
 		int yPos;
 	
@@ -14,12 +13,10 @@ class avatar{
 		void drawAvatar();
 		void moveAvatar(int direction);
 		void resetAvatar();
-		ofRectangle getAvatarShape();
 };
 
 class enemy{
 	private:
-		
 		int xPos;
 		int yPos;
 		int speed;
@@ -31,7 +28,6 @@ class enemy{
 		void drawEnemy();
 		void moveEnemy();
 		ofRectangle enemyShape;
-		ofRectangle getEnemyShape();
 };
 
 class ofApp : public ofBaseApp{
@@ -42,16 +38,16 @@ class ofApp : public ofBaseApp{
 		void draw();
 
 		void keyPressed(int key);
-
-		int mouseX;
-		int mouseY;
+		bool goalReached;
 
 		int lives;
 		int score;
 
 		int screenWidth;
 		int screenHeight;
+
 		
+		ofRectangle davesGoal;
 		avatar* player;
 		vector<enemy>* enemies;
 };
