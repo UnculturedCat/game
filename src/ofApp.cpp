@@ -2,14 +2,15 @@
 
 //--------------------------------------------------------------
 void ofApp::setup(){
-    ofSetWindowTitle("Dodger Dave");
-    ofSetVerticalSync(true);
+
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
-    lives = 3;
-    davesGoal.set(screenWidth * 0.95, 0, 50, 50);
-    player = new avatar(screenWidth / 2, screenHeight * 0.95);
-    enemies = new vector<enemy>{enemy(screenWidth * 0.25, screenHeight * 0.25, screenWidth * 0.02, false, true), enemy(screenWidth * 0.5, screenHeight * 0.5, screenWidth * 0.015, true, false), enemy(screenWidth * 0.50, screenHeight * 0.75, screenWidth * 0.01, false, true)};
+    m_lives = 3;
+    m_collectedAllFruits = false;
+    m_davesGoal.set(screenWidth * 0.95, 0, 50, 50);
+    m_player = new Player(screenWidth / 2, screenHeight * 0.95);
+    m_enemies = new vector<Enemy>{Enemy(screenWidth * 0.25, screenHeight * 0.25, screenWidth * 0.02), Enemy(screenWidth * 0.5, screenHeight * 0.5, screenWidth * 0.015), Enemy(screenWidth * 0.50, screenHeight * 0.75, screenWidth * 0.01)};
+    m_fruits = new vector<Fruit>{Fruit(), Fruit(), Fruit()};
 }
 
 //--------------------------------------------------------------
@@ -17,61 +18,81 @@ void ofApp::update(){
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
     
-
-    if(lives <= 0){//lives are 0, game over. No need to check for collisions
+    if(m_lives <= 0){//lives are 0, game over. No need to check for collisions
         return;
     }
    
-    if(player->avatarShape.intersects(davesGoal)){
-        goalReached = true;
-        player->resetAvatar();
-        return;
-    }
+   if(m_collectedAllFruits){
+        if(m_player->m_collisionBox.intersects(m_davesGoal)){
+            m_goalReached = true;
+            m_player->resetPlayer();
+            return;
+        }
+   }
 
-    for(int i = 0; i < enemies->size(); i++){
-        if(player->avatarShape.intersects(enemies->at(i).enemyShape)){
-            lives--;
-            player->resetAvatar();
+    for(int i = 0; i < m_enemies->size(); i++){
+        if(m_player->m_collisionBox.intersects(m_enemies->at(i).m_collisionBox)){
+            m_lives--;
+            m_player->resetPlayer();
+        }
+    }
+    if(!m_collectedAllFruits){
+        for(int i = 0; i < m_fruits->size(); i++){
+            if(m_player->m_collisionBox.intersects(m_fruits->at(i).m_collisionBox)){
+                m_fruits->erase(m_fruits->begin() + i);
+            }
+        }
+        if(m_fruits->size() == 0){
+            m_collectedAllFruits = true;
         }
     }
 }
 
 //--------------------------------------------------------------
 void ofApp::draw(){
-    
+   
     ofBackground(255, 255, 255);
 
-    if(goalReached){
+    if(m_goalReached){
         ofSetColor(0, 0, 0);
         ofDrawBitmapString("You Win!\nHit SPACE to start again or Q to quit", screenWidth * 0.50, screenHeight * 0.50);
         return;
     }
     
-    if(lives <= 0){
+    if(m_lives <= 0){
         ofSetColor(0, 0, 0);
         ofDrawBitmapString("Game Over\nHit SPACE to start again or Q to quit", screenWidth * 0.50, screenHeight * 0.50);
         return;
     }
-    if(lives == 3){
+    if(m_lives == 3){
         ofSetColor(0, 0, 0);
         ofDrawBitmapString("Lives: 3", 10, 20);
     }
-    else if(lives == 2){
+    else if(m_lives == 2){
         ofSetColor(0, 0, 0);
         ofDrawBitmapString("Lives: 2", 10, 20);
     }
-    else if(lives == 1){
+    else if(m_lives == 1){
         ofSetColor(0, 0, 0);
         ofDrawBitmapString("Lives: 1", 10, 20);
     }
 
     ofSetColor(0, 255, 0);
-    ofDrawRectangle(davesGoal);
+    if(m_collectedAllFruits){
+    ofDrawRectangle(m_davesGoal);
+    }
 
-    player->drawAvatar();
-    for(int i = 0; i < enemies->size(); i++){
-        enemies->at(i).moveEnemy();
-        enemies->at(i).drawEnemy();
+    m_player->drawElement();
+    for(int i = 0; i < m_enemies->size(); i++){
+        m_enemies->at(i).moveEnemy();
+        m_enemies->at(i).drawElement();
+    }
+    for(int i = 0; i < m_fruits->size(); i++){
+    //    if(m_fruits->at(i).m_collected)
+    //    {
+    //     continue; //Do not draw fruit that has been collected
+    //    }
+        m_fruits->at(i).drawElement();
     }
 }
 
@@ -79,116 +100,125 @@ void ofApp::draw(){
 void ofApp::keyPressed(int key){
 
     if(key == ' '){
-        lives = 3;
-        goalReached = false;
-        player->resetAvatar();
+        m_lives = 3;
+        m_goalReached = false;
+        //m_player->resetAvatar();
+        delete m_player;
+        delete m_enemies;
+        delete m_fruits;
+        setup();
     }
     else if(key == 'q'){
         ofExit();
     }
-    player->moveAvatar(key);
+    m_player->movePlayer(key);
 }
 
-avatar::avatar(int xPos, int yPos){
-    this->xPos = xPos;
-    this->yPos = yPos;
-    this->avatarShape.set(xPos, yPos, 50, 50);
+GuiElement::GuiElement(int xPos, int yPos) : m_xPos(xPos), m_yPos(yPos) {}
+
+GuiElement::~GuiElement() {}
+
+void GuiElement::drawElement(){}
+
+//Creates an Enemy and calls the drawElement function.
+Enemy::Enemy(int xPos, int yPos, int movementSpeed)
+    :  GuiElement(xPos, yPos), m_movementSpeed(movementSpeed){
 }
 
-//draws the avatar. The avatar is a rectangle with a black outline and fill.
-void avatar::drawAvatar(){
+//Sets up the collision box for an enemy. This is used to determine if the user intersects this element.
+void Enemy::drawElement(){
+    m_collisionBox.set(m_xPos,m_yPos, ENEMY_WIDTH, ENEMY_HEIGHT);
+    ofSetColor(255, 155, 0);
+    ofDrawRectangle(m_xPos,m_yPos, ENEMY_WIDTH, ENEMY_HEIGHT);
+}
+
+void Enemy::moveEnemy(){
+    int screenWidth = ofGetWidth();
+    if (m_moveRight) {
+       if(m_xPos <= screenWidth - 200){ 
+        if(m_movementSpeed <= screenWidth * 0.01){
+            m_xPos += m_movementSpeed * 1.5;
+        }
+           else{
+               m_xPos += m_movementSpeed;
+           } 
+       }
+        else{
+            m_moveRight = false;
+        }
+    }
+    else if(!m_moveRight){
+        if(m_xPos >= 0){
+            if(m_moveRight > screenWidth * 0.01){
+                m_xPos -= m_movementSpeed * 0.75;
+            }
+            else{
+                m_xPos -= m_movementSpeed;
+            }
+            } //slower than moveRight to make it more interesting
+        if(m_xPos <= 0){
+            m_moveRight = true; 
+        }
+    }
+}
+
+//Creates a player and calls the drawElement function.
+Player::Player(int topVertexXpos, int topVertexYpos)
+    :  GuiElement(topVertexXpos, topVertexYpos){
+}
+
+void Player::resetPlayer(){
+    m_xPos = ofGetWidth() * 0.5;
+    m_yPos = ofGetHeight() * 0.95;
+}
+
+//Sets up the collision box for the player character. This is used to determine if the player intersects other element.
+void Player::drawElement(){
+    m_collisionBox.set(m_xPos - PLAYER_WIDTH/2, m_yPos, PLAYER_WIDTH, PLAYER_HEIGHT);
     ofSetColor(0, 0, 0);
-    this->avatarShape.set(this->xPos, this->yPos, 50, 50);
-    ofDrawRectangle(this->avatarShape);
+    ofDrawTriangle(m_xPos, m_yPos, m_xPos - PLAYER_WIDTH/2, m_yPos + PLAYER_HEIGHT , m_xPos + PLAYER_WIDTH/2,  m_yPos + PLAYER_HEIGHT);
 }
 
 //moves the avatar. The avatar can move up, down, left, or right. The avatar cannot move off the screen.
-void avatar::moveAvatar(int direction){
+void Player::movePlayer(int direction){
     int screenWidth = ofGetWidth();
     int screenHeight = ofGetHeight();
     switch(direction){
         case 'w':
-            if(this->yPos >= 0)
+            if(m_yPos >= 0)
             {
-                this->yPos -= screenHeight * 0.015;
+                m_yPos -= screenHeight * 0.015;
             }
             break;
         case 's':
-            if(this->yPos <= screenHeight)
+            if(m_yPos <= screenHeight)
             {
-                this->yPos += screenHeight * 0.015;
+                m_yPos += screenHeight * 0.015;
             }
             break;
         case 'a':
-            if(this->xPos >= 0)
+            if(m_xPos >= 10)
             {
-                this->xPos -= screenWidth * 0.015;    
+                m_xPos -= screenWidth * 0.015;    
             }
             break;
         case 'd':
-            if(this->xPos <= screenWidth - 50)
+            if(m_xPos <= screenWidth - 10)
             {
-                this->xPos += screenWidth * 0.015;
+                m_xPos += screenWidth * 0.015;
             }
             break;
     }
 }
 
-//resets the avatar to the bottom center of the screen.
-void avatar::resetAvatar(){
-    this->xPos = ofGetWidth() / 2;
-    this->yPos = ofGetHeight() * 0.95;
-    this->avatarShape.set(this->xPos, this->yPos, 50, 50);
+//Creates a Fruit and calls the drawElement function.
+Fruit::Fruit() 
+		: GuiElement(rand() % ofGetScreenWidth() + FRUIT_RADIUS * 2, rand() % ofGetScreenHeight() + FRUIT_RADIUS * 2){
+            m_collected = false;
 }
 
-//creates an enemy. The enemy is a rectangle with a orange outline and orange fill.
-enemy::enemy(int xPos, int yPos, int speed, bool moveRight, bool moveLeft){
-    this->xPos = xPos;
-    this->yPos = yPos;
-    this->speed = speed;
-    this->moveRight = moveRight;
-    this->moveLeft = moveLeft;
-    this->enemyShape.set(xPos, yPos, 200, 100);
-}
-
-//draws the enemy. fill is orange, outline is orange.
-void enemy::drawEnemy(){
-    this->enemyShape.set(this->xPos, this->yPos, 200, 100);
-    ofSetColor(255, 155, 0);
-    ofDrawRectangle(this->enemyShape);
-}
-
-//moves the enemy. The enemy moves back and forth across the screen with varying speeds. The enemy cannot move off the screen.
-void enemy::moveEnemy(){
-    int screenWidth = ofGetWidth();
-    int screenHeight = ofGetHeight();
-    if (moveRight) {
-       if(this->xPos <= screenWidth - 200){ 
-        if(speed <= screenWidth * 0.01){
-            this->xPos += speed * 1.5;
-        }
-           else{
-               this->xPos += speed;
-           } 
-       }
-        else{
-            this->moveRight = false;
-            this->moveLeft = true;
-        }
-    }
-    else if(moveLeft){
-        if(this->xPos >= 0){
-            if(speed > screenWidth * 0.01){
-                this->xPos -= speed * 0.75;
-            }
-            else{
-                this->xPos -= speed;
-            }
-            } //slower than moveRight to make it more interesting
-        if(this->xPos <= 0){
-            this->moveRight = true;
-            this->moveLeft = false;
-        }
-    }
-    drawEnemy();
+void Fruit::drawElement(){
+    m_collisionBox.set(m_xPos, m_yPos, FRUIT_RADIUS * 2, FRUIT_RADIUS * 2);
+    ofSetColor(255, 0, 0);
+    ofDrawCircle(m_xPos, m_yPos, FRUIT_RADIUS);
 }
