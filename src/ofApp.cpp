@@ -1,4 +1,6 @@
 #include "ofApp.h"
+#include <thread>
+#include <chrono>
 
 //--------------------------------------------------------------
 void ofApp::setup(){
@@ -17,35 +19,11 @@ void ofApp::setup(){
 void ofApp::update(){
     screenWidth = ofGetWidth();
     screenHeight = ofGetHeight();
-    
     if(m_lives <= 0){//lives are 0, game over. No need to check for collisions
         return;
     }
-   
-   if(m_collectedAllFruits){
-        if(m_player->m_collisionBox.intersects(m_davesGoal)){
-            m_goalReached = true;
-            m_player->resetPlayer();
-            return;
-        }
-   }
-
-    for(int i = 0; i < m_enemies->size(); i++){
-        if(m_player->m_collisionBox.intersects(m_enemies->at(i).m_collisionBox)){
-            m_lives--;
-            m_player->resetPlayer();
-        }
-    }
-    if(!m_collectedAllFruits){
-        for(int i = 0; i < m_fruits->size(); i++){
-            if(m_player->m_collisionBox.intersects(m_fruits->at(i).m_collisionBox)){
-                m_fruits->erase(m_fruits->begin() + i);
-            }
-        }
-        if(m_fruits->size() == 0){
-            m_collectedAllFruits = true;
-        }
-    }
+    checkEnemyCollision();
+    m_collectedAllFruits ? checkIfGoalReached() : checkFruitCollection();
 }
 
 //--------------------------------------------------------------
@@ -64,6 +42,8 @@ void ofApp::draw(){
         ofDrawBitmapString("Game Over\nHit SPACE to start again or Q to quit", screenWidth * 0.50, screenHeight * 0.50);
         return;
     }
+
+    //show lives
     if(m_lives == 3){
         ofSetColor(0, 0, 0);
         ofDrawBitmapString("Lives: 3", 10, 20);
@@ -88,10 +68,6 @@ void ofApp::draw(){
         m_enemies->at(i).drawElement();
     }
     for(int i = 0; i < m_fruits->size(); i++){
-    //    if(m_fruits->at(i).m_collected)
-    //    {
-    //     continue; //Do not draw fruit that has been collected
-    //    }
         m_fruits->at(i).drawElement();
     }
 }
@@ -112,6 +88,44 @@ void ofApp::keyPressed(int key){
         ofExit();
     }
     m_player->movePlayer(key);
+}
+
+void ofApp::checkEnemyCollision(){
+    for(int i = 0; i < m_enemies->size(); i++){
+        if(m_player->m_collisionBox.intersects(m_enemies->at(i).m_collisionBox)){
+            m_lives--;
+            m_player->resetPlayer();
+        }
+    }
+}
+
+void ofApp::checkFruitCollection(){
+    for(int i = 0; i < m_fruits->size(); i++){
+            if(m_player->m_collisionBox.intersects(m_fruits->at(i).m_collisionBox)){
+                m_fruits->erase(m_fruits->begin() + i);
+            }
+            if(m_fruits->size() == 0){
+            m_collectedAllFruits = true;}
+    }
+}
+
+void ofApp::checkIfGoalReached(){
+    if(m_player->m_collisionBox.intersects(m_davesGoal)){
+        m_goalReached = true;
+        m_player->resetPlayer();
+        return;
+    }
+}
+
+void ofApp::startTimer(){
+    m_timeFruits = true;
+    std::thread timerThread();
+}
+
+void ofApp::initTimer(){
+    while(!m_collectedAllFruits && !m_fruits->empty()){
+        std::this_thread::sleep_for(std::chrono::seconds(30));
+    }
 }
 
 GuiElement::GuiElement(int xPos, int yPos) : m_xPos(xPos), m_yPos(yPos) {}
@@ -221,4 +235,17 @@ void Fruit::drawElement(){
     m_collisionBox.set(m_xPos, m_yPos, FRUIT_RADIUS * 2, FRUIT_RADIUS * 2);
     ofSetColor(255, 0, 0);
     ofDrawCircle(m_xPos, m_yPos, FRUIT_RADIUS);
+}
+
+void Fruit::shuffleLocation(){
+    m_xPos = rand() % ofGetScreenWidth() + FRUIT_RADIUS * 2;
+    m_yPos = rand() % ofGetScreenHeight() + FRUIT_RADIUS * 2;
+}
+
+void ofApp::shuffleFruits(){
+    m_fruitMutex.lock();
+    for(auto fruit : m_fruits){
+        m_fruit.shuffleLocation();
+    }
+    m_fruitMutex.unlock();
 }

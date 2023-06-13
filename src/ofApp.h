@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ofMain.h"
+#include <mutex>
 
 #define ENEMY_HEIGHT 100
 #define ENEMY_WIDTH 200
@@ -16,8 +17,8 @@ class GuiElement {
 		ofRectangle m_collisionBox;
 		
 		GuiElement(int xPos, int yPos);
+		
 		virtual ~GuiElement();
-
 		virtual void drawElement(); //Apparently virtual functions are costly because of the extra steps
 
 		
@@ -28,6 +29,7 @@ class Enemy : public GuiElement {
 
 	private:
 		int m_movementSpeed;
+
 		bool m_moveRight;
 	
 	public:
@@ -51,9 +53,11 @@ class Fruit : public GuiElement {
 	
 	public:
 		bool m_collected;
+		
 		Fruit() ;
 
 		void drawElement();
+		void shuffleLocation();
 };
 
 class ofApp : public ofBaseApp{
@@ -61,13 +65,14 @@ class ofApp : public ofBaseApp{
 	public:
 		bool m_goalReached;
 		bool m_collectedAllFruits;
+		bool m_timeFruits;
 
 		int m_lives;
-
 		int screenWidth;
 		int screenHeight;
 
-		
+		std::mutex m_fruitMutex;
+
 		ofRectangle m_davesGoal;
 		Player* m_player;
 		vector<Enemy>* m_enemies;
@@ -78,4 +83,11 @@ class ofApp : public ofBaseApp{
 		void draw();
 
 		void keyPressed(int key);
+		void checkEnemyCollision();
+		void checkFruitCollection();
+		void checkIfGoalReached();
+
+		void startTimer();
+		void shuffleFruits();
+		void initTimer();
 };
