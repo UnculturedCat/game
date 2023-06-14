@@ -70,6 +70,7 @@ class ofApp : public ofBaseApp{
 		int m_lives;
 		int screenWidth;
 		int screenHeight;
+		int m_time;
 
 		std::mutex m_fruitMutex;
 
@@ -83,11 +84,17 @@ class ofApp : public ofBaseApp{
 		void draw();
 
 		void keyPressed(int key);
+
 		void checkEnemyCollision();
 		void checkFruitCollection();
 		void checkIfGoalReached();
 
+		void startTimerThread();
 		void startTimer();
 		void shuffleFruits();
-		void initTimer();
+
+		void drawEnemies();
+		void drawFruits();
+
+		std::string getLivesText();
 };

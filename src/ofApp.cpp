@@ -43,19 +43,7 @@ void ofApp::draw(){
         return;
     }
 
-    //show lives
-    if(m_lives == 3){
-        ofSetColor(0, 0, 0);
-        ofDrawBitmapString("Lives: 3", 10, 20);
-    }
-    else if(m_lives == 2){
-        ofSetColor(0, 0, 0);
-        ofDrawBitmapString("Lives: 2", 10, 20);
-    }
-    else if(m_lives == 1){
-        ofSetColor(0, 0, 0);
-        ofDrawBitmapString("Lives: 1", 10, 20);
-    }
+    ofDrawBitmapString(getLivesText(), 10, 20);
 
     ofSetColor(0, 255, 0);
     if(m_collectedAllFruits){
@@ -63,13 +51,8 @@ void ofApp::draw(){
     }
 
     m_player->drawElement();
-    for(int i = 0; i < m_enemies->size(); i++){
-        m_enemies->at(i).moveEnemy();
-        m_enemies->at(i).drawElement();
-    }
-    for(int i = 0; i < m_fruits->size(); i++){
-        m_fruits->at(i).drawElement();
-    }
+    drawEnemies();
+    drawFruits();
 }
 
 //Listen for key presses. If the space bar is pressed, reset the game. If the q key is pressed, quit the game. Otherwise, move the avatar.
@@ -100,6 +83,7 @@ void ofApp::checkEnemyCollision(){
 }
 
 void ofApp::checkFruitCollection(){
+    m_fruitMutex.lock();
     for(int i = 0; i < m_fruits->size(); i++){
             if(m_player->m_collisionBox.intersects(m_fruits->at(i).m_collisionBox)){
                 m_fruits->erase(m_fruits->begin() + i);
@@ -107,6 +91,7 @@ void ofApp::checkFruitCollection(){
             if(m_fruits->size() == 0){
             m_collectedAllFruits = true;}
     }
+    m_fruitMutex.unlock();
 }
 
 void ofApp::checkIfGoalReached(){
@@ -117,14 +102,42 @@ void ofApp::checkIfGoalReached(){
     }
 }
 
-void ofApp::startTimer(){
-    m_timeFruits = true;
-    std::thread timerThread();
+void ofApp::startTimerThread(){
+    std::thread timerThread = std::thread(startTimer());
 }
 
-void ofApp::initTimer(){
+void ofApp::startTimer(){
     while(!m_collectedAllFruits && !m_fruits->empty()){
         std::this_thread::sleep_for(std::chrono::seconds(30));
+        shuffleFruits();
+    }
+}
+
+void ofApp::drawEnemies(){
+    for(int i = 0; i < m_enemies->size(); i++){
+            m_enemies->at(i).moveEnemy();
+            m_enemies->at(i).drawElement();
+        }
+}
+
+void ofApp::drawFruits(){
+    m_fruitMutex.lock();
+    for(int i = 0; i < m_fruits->size(); i++){
+        m_fruits->at(i).drawElement();
+    }
+    m_fruitMutex.unlock();
+}
+
+std::string ofApp::getLivesText(){
+    switch(m_lives){
+        case 3:
+            return "Lives: 3";
+        case 2:
+            return "Lives: 2";
+        case 1:
+            return "Lives: 1";
+        default:
+            return "error";
     }
 }
 
@@ -244,8 +257,8 @@ void Fruit::shuffleLocation(){
 
 void ofApp::shuffleFruits(){
     m_fruitMutex.lock();
-    for(auto fruit : m_fruits){
-        m_fruit.shuffleLocation();
+    for(auto fruit : *m_fruits){
+        fruit.shuffleLocation();
     }
     m_fruitMutex.unlock();
 }
