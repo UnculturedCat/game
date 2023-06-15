@@ -13,6 +13,7 @@ void ofApp::setup(){
     m_player = new Player(screenWidth / 2, screenHeight * 0.95);
     m_enemies = new vector<Enemy>{Enemy(screenWidth * 0.25, screenHeight * 0.25, screenWidth * 0.02), Enemy(screenWidth * 0.5, screenHeight * 0.5, screenWidth * 0.015), Enemy(screenWidth * 0.50, screenHeight * 0.75, screenWidth * 0.01)};
     m_fruits = new vector<Fruit>{Fruit(), Fruit(), Fruit()};
+    startTimerThread();
 }
 
 //--------------------------------------------------------------
@@ -103,12 +104,14 @@ void ofApp::checkIfGoalReached(){
 }
 
 void ofApp::startTimerThread(){
-    std::thread timerThread = std::thread(startTimer());
+   std::thread timerThread([this](){startTimer();});
+   timerThread.detach();
+   //std::thread timerThread(startTimer);
 }
 
 void ofApp::startTimer(){
     while(!m_collectedAllFruits && !m_fruits->empty()){
-        std::this_thread::sleep_for(std::chrono::seconds(30));
+        std::this_thread::sleep_for(std::chrono::seconds(10));
         shuffleFruits();
     }
 }
@@ -257,8 +260,8 @@ void Fruit::shuffleLocation(){
 
 void ofApp::shuffleFruits(){
     m_fruitMutex.lock();
-    for(auto fruit : *m_fruits){
-        fruit.shuffleLocation();
+    for(int i = 0; i < m_fruits->size(); i++){
+        m_fruits->at(i).shuffleLocation();
     }
     m_fruitMutex.unlock();
 }

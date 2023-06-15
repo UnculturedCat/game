@@ -33,7 +33,8 @@
                 "${workspaceRoot}/../../../libs/rtAudio/include",
                 "${workspaceRoot}/../../../libs/tess2/include",
                 "${workspaceRoot}/../../../libs/uriparser/include",
-                "${workspaceRoot}/../../../libs/utf8/include"
+                "${workspaceRoot}/../../../libs/utf8/include",
+                "/Users/daniel/development/of_v0.11.2_osx_release/libs/cairo/include/cairo"
             ],
             "browse": {
                 "limitSymbolsToIncludedHeaders": true,
@@ -163,7 +164,7 @@
                 "path": [
                     "${workspaceRoot}/../../../libs",
                     "${workspaceRoot}/../../../addons",
-                    "${workspaceRoot}/../../../libs/openFrameworks"    
+                    "${workspaceRoot}/../../../libs/openFrameworks"
                 ]
             },
             "intelliSenseMode": "clang-x64",
